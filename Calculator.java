@@ -1,55 +1,64 @@
 import java.util.*;
+import java.lang.Math;
 
 public class Calculator {
 	
 	public static void main(String args[]) {
-		
+
+		// アスタリスクをコマンドライン引数に指定するとファイル名が展開されてしまうためScannerを使用
 		Scanner scanner = new Scanner(System.in);
-        
-        // アスタリスクをコマンドライン引数に指定するとファイル名が展開されてしまうためScannerを使用
-        System.out.println("四則演算に対応した計算機です。式を入力してください。");
-        String inputStr = scanner.nextLine();
-        scanner.close();
+		System.out.println("四則演算に対応した計算機です。式を入力してください。");
+		String inputStr = scanner.nextLine();
+		scanner.close();
 		
-		// Indexofを使うためListに格納
 		String num = "";
 		List<String> list = new ArrayList<>();
-		for(int i = 0; i < inputStr.length(); i++) {
-			char c = inputStr.charAt(i);
-			if (c == '+' || c == '-' || c == '*' || c == '/') {
-				// 直前までの数値をリストに格納
-				if (!num.isEmpty()) {
-					list.add(num);
-					num = "";
-				}
-				// 演算子をリストに格納
-				list.add(String.valueOf(c));
-			} else {
-				// 数値の終端まで繋げる
-				num += String.valueOf(c);
-			}
-		}
-		list.add(num);
+		Boolean exponentFlg = false;	// 指数フラグ
+		String exponent = "";			// 指数
 		
-		// 単純四則計算
 		try {
+			// Indexofを使うためListに格納
+			for(int i = 0; i < inputStr.length(); i++) {
+				char c = inputStr.charAt(i);
+				if (c == '+' || c == '-' || c == '*' || c == '/') {
+					// 直前までの数値をリストに格納
+					if (!num.isEmpty()) {
+						list.add(num);
+						num = "";
+					}
+					// 演算子をリストに格納
+					list.add(String.valueOf(c));
+				} else {
+					// 数値の終端まで繋げる
+					num += String.valueOf(c);
+				}
+			}
+			list.add(num);
+		
+			// 単純四則計算
 			double num1 = 0;
 			double num2 = 0;
+			String strNum1 = "";
+			String strNum2 = "";
 			double result = 0;
 			// 積・商の演算子を前から一つずつ処理
 			while (list.contains("*") || list.contains("/")) {
 				int indexOfOpe = 0;
 				// リストの最前にある積または商の計算
-				if (list.contains("*")) {
-					indexOfOpe = list.indexOf("*");
-					num1 = Double.parseDouble(list.get(indexOfOpe - 1));
-					num2 = Double.parseDouble(list.get(indexOfOpe + 1));
-					result = num1 * num2;
-				} else if (list.contains("/")) {
+				if (list.contains("/")) {
 					indexOfOpe = list.indexOf("/");
-					num1 = Double.parseDouble(list.get(indexOfOpe - 1));
-					num2 = Double.parseDouble(list.get(indexOfOpe + 1));
+					strNum1 = list.get(indexOfOpe - 1);
+					strNum2 = list.get(indexOfOpe + 1);
+					num1 = exponent(strNum1);
+					num2 = exponent(strNum2);
 					result = num1 / num2;
+				} else if (list.contains("*")) {
+					indexOfOpe = list.indexOf("*");
+					strNum1 = list.get(indexOfOpe - 1);
+					strNum2 = list.get(indexOfOpe + 1);
+					num1 = exponent(strNum1);
+					num2 = exponent(strNum2);
+					result = num1 * num2;
 				}
 				// tmpListに上の計算結果とそれ以外を格納していく
 				ArrayList<String> tmpList = new ArrayList<>();
@@ -89,6 +98,21 @@ public class Calculator {
 			System.out.println("不正な数値が入力されています。：" + e.getMessage());
 		}
 		
+	}
+	
+	// 文字列をdoubleに変換して返す（指数表記対応済み）
+	public static double exponent(String num) {
+		double result = 0;
+		// 指数表記の有無で分岐
+		if (num.contains("E")) {
+			double num1 = Double.parseDouble(num.substring(0, num.indexOf("E")));
+			double num2 = Double.parseDouble(num.substring(num.indexOf("E") + 1));
+			// TODO:-10対応も必要？
+			result = num1 * Math.pow(10, num2);
+		} else {
+			result = Double.parseDouble(num);
+		}
+		return result;
 	}
 
 }
