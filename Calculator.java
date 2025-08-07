@@ -12,8 +12,8 @@ public class Calculator {
 		scanner.close();
 		
 		try {
+			// 計算を行う
 			double result = calculate(formula);
-						
 			// 結果を出力
 			System.out.println(formula + " の答えは " + String.valueOf(result) + " です。");
 			
@@ -26,6 +26,39 @@ public class Calculator {
 	
 	// 入力された式の計算を行う
 	public static double calculate(String formula) {
+		
+		double result = 0;
+		
+		// 先にカッコ内の計算を行い、カッコのない状態にする
+		String calculatedFormula = formula;
+		boolean parenthesesFlg  = false;
+		while (calculatedFormula.contains("(") && calculatedFormula.contains(")")) {
+			if (calculatedFormula.contains(")")) {
+				// 閉じカッコがある場合その位置から前にある開きカッコを探す
+				int closeIdx = calculatedFormula.indexOf(')', 0);
+				int openIdx = calculatedFormula.lastIndexOf('(', closeIdx);
+				String parentheses = calculatedFormula.substring((openIdx + 1), closeIdx);
+				// カッコ内の計算
+				double parenthesesResult = fourArithmeticOperations(parentheses);
+				// 計算済みのカッコを取り除く
+				String tmpStr = "";
+				if (openIdx > 0) {
+					tmpStr += calculatedFormula.substring(0, openIdx);
+				}
+				tmpStr += String.valueOf(parenthesesResult);
+				tmpStr += calculatedFormula.substring((closeIdx + 1));
+				calculatedFormula = tmpStr;
+			}
+		}
+		
+		// 残りの四則演算を行う
+		result = fourArithmeticOperations(calculatedFormula);
+		return result;
+
+	}
+	
+	// 四則演算の結果を返す
+	public static double fourArithmeticOperations(String formula) {
 		
 		double result = 0;
 		String num = "";
@@ -58,7 +91,7 @@ public class Calculator {
 			}
 		}
 		list.add(num);
-		
+
 		// 積・商の演算子を前から一つずつ処理
 		double num1 = 0;
 		double num2 = 0;
@@ -113,8 +146,9 @@ public class Calculator {
 			}
 		}
 		return result;
-		
+
 	}
+	
 	
 	// 文字列をdoubleに変換して返す（指数表記対応済み）
 	public static double exponent(String num) {
