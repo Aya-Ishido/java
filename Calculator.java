@@ -33,22 +33,29 @@ public class Calculator {
 		String calculatedFormula = formula;
 		boolean parenthesesFlg  = false;
 		while (calculatedFormula.contains("(") && calculatedFormula.contains(")")) {
-			if (calculatedFormula.contains(")")) {
-				// 閉じカッコがある場合その位置から前にある開きカッコを探す
-				int closeIdx = calculatedFormula.indexOf(')', 0);
-				int openIdx = calculatedFormula.lastIndexOf('(', closeIdx);
-				String parentheses = calculatedFormula.substring((openIdx + 1), closeIdx);
-				// カッコ内の計算
-				double parenthesesResult = fourArithmeticOperations(parentheses);
-				// 計算済みのカッコを取り除く
-				String tmpStr = "";
+			// 閉じカッコがある場合その位置から前にある開きカッコを探す
+			int closeIdx = calculatedFormula.indexOf(')', 0);
+			int openIdx = calculatedFormula.lastIndexOf('(', closeIdx);
+			String parentheses = calculatedFormula.substring((openIdx + 1), closeIdx);
+			// カッコ内の計算
+			double parenthesesResult = fourArithmeticOperations(parentheses);
+			// 計算済みのカッコを取り除いて以下に格納
+			String tmpStr = "";
+			// sqrt関数の場合の計算（関数を増やしたい場合はif文の分岐を増やす）
+			if (openIdx > 3 && "sqrt".equals(calculatedFormula.substring(openIdx - 4, openIdx))) {
+				double sqrt = Math.sqrt(parenthesesResult);
+				if (openIdx > 4) {
+					tmpStr += calculatedFormula.substring(0, (openIdx - 4));
+				}
+				tmpStr += String.valueOf(sqrt);
+			} else {
 				if (openIdx > 0) {
 					tmpStr += calculatedFormula.substring(0, openIdx);
 				}
 				tmpStr += String.valueOf(parenthesesResult);
-				tmpStr += calculatedFormula.substring((closeIdx + 1));
-				calculatedFormula = tmpStr;
 			}
+			tmpStr += calculatedFormula.substring((closeIdx + 1));
+			calculatedFormula = tmpStr;
 		}
 		
 		// 残りの四則演算を行う
@@ -85,6 +92,9 @@ public class Calculator {
 				// 指数（次の式に対応）：1E1, 1e1, 1E+1, 1E-1, 1e+1, 1e-1
 				if (c == 'E' || c == 'e') {
 				 	exponentFlg = true;
+				 }
+				 if (exponentFlg) {
+				 	exponentFlg = false;
 				 }
 				// 数値の終端まで繋げる
 				num += String.valueOf(c);
@@ -137,11 +147,11 @@ public class Calculator {
 			String str = list.get(i);
 			if (str != "+" && str != "-") {
 				if (i == 0) {
-					result = Double.parseDouble(str);
+					result = exponent(str);
 				} else if (list.get(i - 1).equals("+")) {
-					result = result + Double.parseDouble(str);
+					result = result + exponent(str);
 				} else if (list.get(i - 1).equals("-")) {
-					result = result - Double.parseDouble(str);
+					result = result - exponent(str);
 				}
 			}
 		}
