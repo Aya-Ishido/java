@@ -1,0 +1,179 @@
+import java.util.*;
+import java.lang.Math;
+
+public class Calculate {
+
+	// 入力された式の計算を行う
+	public double calculate(String formula) {
+		
+		double result = 0;
+		
+		// 先にカッコ内の計算を行い、カッコのない状態にする
+		String calculatedFormula = formula;
+		boolean parenthesesFlg  = false;
+		while (calculatedFormula.contains("(") && calculatedFormula.contains(")")) {
+			// 閉じカッコがある場合その位置から前にある開きカッコを探す
+			int closeIdx = calculatedFormula.indexOf(')', 0);
+			int openIdx = calculatedFormula.lastIndexOf('(', closeIdx);
+			String parentheses = calculatedFormula.substring((openIdx + 1), closeIdx);
+			// カッコ内の計算
+			double parenthesesResult = fourArithmeticOperations(parentheses);
+			// 計算済みのカッコを取り除いて以下に格納
+			String tmpStr = "";
+			// sqrt関数の場合の計算（関数を増やしたい場合はif文の分岐を増やす）
+			if (openIdx > 3 && "sqrt".equals(calculatedFormula.substring(openIdx - 4, openIdx))) {
+				double sqrt = Math.sqrt(parenthesesResult);
+				if (openIdx > 4) {
+					tmpStr += calculatedFormula.substring(0, (openIdx - 4));
+				}
+				tmpStr += String.valueOf(sqrt);
+			} else {
+				if (openIdx > 0) {
+					tmpStr += calculatedFormula.substring(0, openIdx);
+				}
+				tmpStr += String.valueOf(parenthesesResult);
+			}
+			tmpStr += calculatedFormula.substring((closeIdx + 1));
+			calculatedFormula = tmpStr;
+		}
+		
+		// 残りの四則演算を行う
+		result = fourArithmeticOperations(calculatedFormula);
+		return result;
+
+	}
+	
+	// 四則演算の結果を返す
+	public double fourArithmeticOperations(String formula) {
+		
+		double result = 0;
+		String num = "";
+		List<String> list = new ArrayList<>();
+		Boolean exponentFlg = false; // 指数フラグ
+		
+		// Indexofを使うためListに格納
+		for(int i = 0; i < formula.length(); i++) {
+			char c = formula.charAt(i);
+			if (c == '+' || c == '-' || c == '*' || c == '/') {
+				if (exponentFlg && (c == '+' || c == '-')) {
+					num += String.valueOf(c);
+					exponentFlg = false;
+				} else {
+					if (!num.isEmpty()) {
+						// 直前までの数値をリストに格納
+						list.add(num);
+						num = "";
+					}
+					// 演算子をリストに格納
+					list.add(String.valueOf(c));
+				}
+			} else {
+				// 指数（次の式に対応）：1E1, 1e1, 1E+1, 1E-1, 1e+1, 1e-1
+				if (exponentFlg) {
+				 	exponentFlg = false;
+				 }
+				if (c == 'E' || c == 'e') {
+				 	exponentFlg = true;
+				 }
+				// 数値の終端まで繋げる
+				num += String.valueOf(c);
+			}
+		}
+		list.add(num);
+
+		// 積・商の演算子を前から一つずつ処理
+		double num1 = 0;
+		double num2 = 0;
+		double tmpResult = 0;
+		String strNum1 = "";
+		String strNum2 = "";
+		while (list.contains("*") || list.contains("/")) {
+			int indexOfOpe = 0;
+			// リストの最前にある積または商の計算
+			if (list.contains("/")) {
+				indexOfOpe = list.indexOf("/");
+				strNum1 = list.get(indexOfOpe - 1);
+				strNum2 = list.get(indexOfOpe + 1);
+				num1 = exponent(strNum1);
+				num2 = exponent(strNum2);
+				tmpResult = num1 / num2;
+			} else if (list.contains("*")) {
+				indexOfOpe = list.indexOf("*");
+				strNum1 = list.get(indexOfOpe - 1);
+				strNum2 = list.get(indexOfOpe + 1);
+				num1 = exponent(strNum1);
+				num2 = exponent(strNum2);
+				tmpResult = num1 * num2;
+			}
+			// tmpListに上の計算結果とそれ以外を格納していく
+			ArrayList<String> tmpList = new ArrayList<>();
+			for(int i = 0; i < list.size(); i++) {
+				if (i == indexOfOpe) {
+					tmpList.add(String.valueOf(tmpResult));
+				} else if (i != (indexOfOpe - 1) && i != (indexOfOpe + 1)) {
+					tmpList.add(list.get(i));
+				}
+			}
+			// 積・商の演算子が残っているか判定するためtmpListでlistを上書き
+			list = new ArrayList<>(tmpList);
+		}
+			
+		// 和・差の計算
+		num1 = 0;
+		num2 = 0;
+		result = 0;
+		for(int i = 0; i < list.size(); i++) {
+			String str = list.get(i);
+			if (!str.equals("+") && !str.equals("-")) {
+				if (i == 0) {
+					result = exponent(str);
+				} else if (list.get(i - 1).equals("+")) {
+					System.out.println(String.valueOf(result));
+					double add = result + exponent(str);
+					result = add;
+				} else if (list.get(i - 1).equals("-")) {
+					double subtract = result - exponent(str);
+					result = subtract;
+				}
+			}
+		}
+		return result;
+
+	}
+	
+	
+	// 文字列をdoubleに変換して返す（指数表記対応済み）
+	public double exponent(String num) {
+		double result = 0;
+		// 指数表記の有無で分岐
+		if (num.contains("E") || num.contains("e")) {
+			double num1 = 0;
+			double num2 = 0;
+			char exp;
+			if (num.contains("E")) {
+				exp = 'E';
+			} else {
+				exp = 'e';
+			}
+			num1 = Double.parseDouble(num.substring(0, num.indexOf(exp)));
+			if (num.contains("+")) {
+				// 1E+1, 1e+1
+				num2 = Double.parseDouble(num.substring(num.indexOf(exp) + 2));
+				result = num1 * Math.pow(10, num2);
+			} else if (num.contains("-")) {
+				// 1E-1, 1e-1
+				num2 = Double.parseDouble(num.substring(num.indexOf(exp) + 2));
+				result = num1 * Math.pow(10, (-1) * num2);
+			} else {
+				// 1E1
+				num2 = Double.parseDouble(num.substring(num.indexOf(exp) + 1));
+				result = num1 * Math.pow(10, num2);
+			}
+		} else {
+			result = Double.parseDouble(num);
+		}
+		return result;
+		
+	}
+
+}
